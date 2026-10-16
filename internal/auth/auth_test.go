@@ -1,6 +1,9 @@
 package auth
 
-import "testing"
+import (
+	"net/http"
+	"testing"
+)
 
 func TestCheckPasswordHash(t *testing.T) {
 	password1 := "secret"
@@ -58,4 +61,66 @@ func TestCheckPasswordHash(t *testing.T) {
 		})
 	}
 
+}
+
+func TestGetBearerToken(t *testing.T) {
+
+	tests := map[string]struct {
+		headers   http.Header
+		wantToken string
+		wantErr   bool
+	}{
+		"Valid Bearer Token": {
+			headers: http.Header{
+				"Authorization": []string{"Bearer secret-token-123"},
+			},
+			wantToken: "secret-token-123",
+			wantErr:   false,
+		},
+		"Missing Auhtorization Header": {
+			headers:   http.Header{},
+			wantToken: "",
+			wantErr:   true,
+		},
+		"Empty Authorization Header": {
+			headers: http.Header{
+				"Authorization": []string{""},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+		"Missing Bearer Prefix": {
+			headers: http.Header{
+				"Authorization": []string{"secret-token-123"},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+		"Wrong Auth scheme": {
+			headers: http.Header{
+				"Authorization": []string{"Apikey secret-token-123"},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+		"Bearer wihtout token": {
+			headers: http.Header{
+				"Authorization": []string{"Bearer"},
+			},
+			wantToken: "",
+			wantErr:   true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			token, err := GetBearerToken(tt.headers)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBearerToken() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && token != tt.wantToken {
+				t.Errorf("GetBearerToken() expects %q, got %q", tt.wantToken, token)
+			}
+		})
+	}
 }

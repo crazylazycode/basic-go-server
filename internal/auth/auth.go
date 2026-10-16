@@ -1,6 +1,12 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"net/http"
+	"strings"
+
 	"github.com/alexedwards/argon2id"
 )
 
@@ -18,4 +24,24 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 		return false, err
 	}
 	return match, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("no authorization header found")
+	}
+
+	splitAuth := strings.Split(authHeader, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
+		return "", errors.New("malformed authorization header")
+	}
+
+	return strings.TrimSpace(splitAuth[1]), nil
+}
+
+func MakeRefreshToken() string {
+	tokenBytes := make([]byte, 32)
+	_, _ = rand.Read(tokenBytes)
+	return hex.EncodeToString(tokenBytes)
 }
