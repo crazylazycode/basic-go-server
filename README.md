@@ -1,4 +1,8 @@
+### Project CLI commands
+
+```
 go build -o out && ./out
+```
 
 psql "postgres://postgres:postgres@localhost:5432/chirpy?sslmode=disable"
 
